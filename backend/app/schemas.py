@@ -14,8 +14,4 @@ class RunStatus(BaseModel):
 class RunResults(BaseModel):
     run_id: str
     summary: Dict[str, float]
-<<<<<<< HEAD
     rows: List[Dict[str, Any]]
-=======
-    rows: List[Dict[str, Any]]
->>>>>>> 09c3099 (Update backend logic)
