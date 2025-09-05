@@ -1,0 +1,28 @@
+# Node
+node_modules/
+dist/
+.build/
+.next/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# MacOS
+.DS_Store
+__MACOSX/
+
+# Vite
+.vite/
+
+# Others
+.env
+.env.*
+coverage/
+*.log
+*.sqlite
+backend/data/

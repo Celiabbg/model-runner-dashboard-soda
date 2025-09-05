@@ -1,0 +1,123 @@
+name: ci-cd
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME_FE: ${{ github.repository_owner }}/model-runner-frontend
+  IMAGE_NAME_BE: ${{ github.repository_owner }}/model-runner-backend
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Backend deps
+        uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r backend/requirements.txt
+
+      - name: Frontend deps
+        uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BE }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BE }}:latest
+
+      - name: Build & push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FE }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FE }}:latest
+
+  deploy-dev:
+    needs: build-test
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      # Example: deploy to Azure Web Apps for Containers (backend)
+      - name: Deploy backend (Web App)
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_BE_DEV }}
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BE }}:${{ github.sha }}
+      - name: Deploy frontend (Web App)
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_FE_DEV }}
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FE }}:${{ github.sha }}
+
+  deploy-test:
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Deploy backend (test)
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_BE_TEST }}
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BE }}:${{ github.sha }}
+      - name: Deploy frontend (test)
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_FE_TEST }}
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FE }}:${{ github.sha }}
+
+  deploy-prod:
+    needs: deploy-test
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Deploy backend (prod)
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_BE_PROD }}
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BE }}:${{ github.sha }}
+      - name: Deploy frontend (prod)
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_FE_PROD }}
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FE }}:${{ github.sha }}

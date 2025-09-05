@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: modelrunner-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: modelrunner-frontend }
+  template:
+    metadata:
+      labels: { app: modelrunner-frontend }
+    spec:
+      containers:
+      - name: frontend
+        image: ghcr.io/your-org/model-runner-frontend:latest
+        ports: [{ containerPort: 80 }]
+        env:
+          - name: VITE_API_BASE
+            value: "https://api.example.com"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: modelrunner-frontend
+spec:
+  type: ClusterIP
+  selector: { app: modelrunner-frontend }
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: modelrunner-frontend
+spec:
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: modelrunner-frontend
+                port:
+                  number: 80
