@@ -43,4 +43,8 @@ def run_async(db_session_factory, run_id: str, inputs: dict):
             update_run(db, run_id, status="failed", message=str(e))
         finally:
             db.close()
+<<<<<<< HEAD
     threading.Thread(target=work, daemon=True).start()
+=======
+    threading.Thread(target=work, daemon=True).start()
+>>>>>>> 09c3099 (Update backend logic)

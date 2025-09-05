@@ -37,4 +37,8 @@ def save_results(db: Session, run_id: str, summary, rows):
     return rr
 
 def get_results(db: Session, run_id: str):
+<<<<<<< HEAD
     return db.query(RunResult).filter(RunResult.run_id == run_id).first()
+=======
+    return db.query(RunResult).filter(RunResult.run_id == run_id).first()
+>>>>>>> 09c3099 (Update backend logic)
