@@ -1,28 +1,18 @@
-# Node
+# Node / Frontend
 node_modules/
 dist/
-.build/
+build/
+.vite/
 .next/
+*.log
 
-# Python
-.venv/
+# Python / Backend
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-*.sqlite3
-
-# MacOS
-.DS_Store
-__MACOSX/
-
-# Vite
-.vite/
-
-# Others
+.venv/
 .env
-.env.*
-coverage/
-*.log
-*.sqlite
-backend/data/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
