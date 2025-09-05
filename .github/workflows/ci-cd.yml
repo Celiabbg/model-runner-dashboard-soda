@@ -6,118 +6,150 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME_FE: ${{ github.repository_owner }}/model-runner-frontend
-  IMAGE_NAME_BE: ${{ github.repository_owner }}/model-runner-backend
+  OWNER_LC: ${{ toLower(github.repository_owner) }}
+  IMAGE_NAME_FE: model-runner-frontend
+  IMAGE_NAME_BE: model-runner-backend
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Backend deps
+      # ---------- Backend deps ----------
+      - name: Setup Python
         uses: actions/setup-python@v5
-        with: { python-version: "3.11" }
-      - run: pip install -r backend/requirements.txt
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Install backend deps
+        run: pip install -r backend/requirements.txt
 
-      - name: Frontend deps
+      # ---------- Frontend deps ----------
+      - name: Setup Node
         uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - run: |
-          cd frontend
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build frontend
+        working-directory: frontend
+        run: |
           npm ci
           npm run build
 
+      # ---------- Login to GHCR ----------
       - name: Log in to GHCR
+        if: ${{ github.event_name != 'pull_request' }}
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # ---------- Build & push backend image ----------
       - name: Build & push backend image
         uses: docker/build-push-action@v6
         with:
           context: ./backend
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BE }}:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BE }}:latest
+            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME_BE }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME_BE }}:latest
 
+      # ---------- Build & push frontend image ----------
       - name: Build & push frontend image
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FE }}:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FE }}:latest
+            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME_FE }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME_FE }}:latest
 
   deploy-dev:
+    if: ${{ github.event_name == 'push' }}
     needs: build-test
     runs-on: ubuntu-latest
     environment: dev
     steps:
       - uses: actions/checkout@v4
-      - uses: azure/login@v2
+      - name: Azure Login
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      # Example: deploy to Azure Web Apps for Containers (backend)
-      - name: Deploy backend (Web App)
+
+      # Backend dployed to Azure Web App for Containers
+      - name: Deploy backend (dev)
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_BE_DEV }}
           images: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BE }}:${{ github.sha }}
-      - name: Deploy frontend (Web App)
+            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME_BE }}:${{ github.sha }}
+
+      # Frontend deployed to Azure Web App for Containers
+      - name: Deploy frontend (dev)
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_FE_DEV }}
           images: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FE }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME_FE }}:${{ github.sha }}
 
   deploy-test:
+    if: ${{ github.event_name == 'push' }}
     needs: deploy-dev
     runs-on: ubuntu-latest
     environment: test
     steps:
       - uses: actions/checkout@v4
-      - uses: azure/login@v2
+      - name: Azure Login
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       - name: Deploy backend (test)
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_BE_TEST }}
           images: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BE }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME_BE }}:${{ github.sha }}
+
       - name: Deploy frontend (test)
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_FE_TEST }}
           images: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FE }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME_FE }}:${{ github.sha }}
 
   deploy-prod:
+    if: ${{ github.event_name == 'push' }}
     needs: deploy-test
     runs-on: ubuntu-latest
     environment: prod
     steps:
       - uses: actions/checkout@v4
-      - uses: azure/login@v2
+      - name: Azure Login
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       - name: Deploy backend (prod)
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_BE_PROD }}
           images: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BE }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME_BE }}:${{ github.sha }}
+
       - name: Deploy frontend (prod)
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_FE_PROD }}
           images: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FE }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME_FE }}:${{ github.sha }}
