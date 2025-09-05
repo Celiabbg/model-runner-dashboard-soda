@@ -12,7 +12,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  OWNER_LC: ${{ toLower(github.repository_owner) }}
+  OWNER_LC: ${{ github.repository_owner }}
   IMAGE_NAME_FE: model-runner-frontend
   IMAGE_NAME_BE: model-runner-backend
 
