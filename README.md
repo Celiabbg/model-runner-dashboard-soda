@@ -9,6 +9,8 @@ An end-to-end full-stack dashboard that allows internal users to:
 
 This project was built as part of the **SODA Full-Stack Take-Home Challenge**.
 
+---
+
 ## Features
 
 ### Frontend (React + TypeScript + Vite)
@@ -27,6 +29,8 @@ This project was built as part of the **SODA Full-Stack Take-Home Challenge**.
 - SQLite persistence for run metadata & results
 - OpenAPI/Swagger docs available at `/docs`
 
+---
+
 ## Tech Stack
 
 - **Frontend:** React, TypeScript, Vite, TailwindCSS  
@@ -34,6 +38,8 @@ This project was built as part of the **SODA Full-Stack Take-Home Challenge**.
 - **Database:** SQLite (lightweight local persistence)  
 - **Containerization:** Docker + Docker Compose  
 - **CI/CD:** GitHub Actions  
+
+---
 
 ## Project Structure
 
@@ -47,78 +53,93 @@ model-runner-dashboard-soda/
 ├── docker-compose.yml
 ├── .github/workflows/ci-cd.yml
 └── README.md
-⚡ Getting Started
-Prerequisites
-Node.js 20+
+```
 
-Python 3.11+
+---
 
-Docker (optional, for containerized run)
+## Getting Started
 
-Run Locally
-Backend
+### Prerequisites
 
-bash
-Copy code
+- **Node.js 20+**
+- **Python 3.11+**
+- **Docker** (optional, for containerized run)
+
+---
+
+### Run Locally
+
+#### Backend
+
+```bash
 cd backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
-Frontend
+```
 
-bash
-Copy code
+#### Frontend
+
+```bash
 cd frontend
 npm install
 npm run dev
-Visit: http://localhost:5173
+```
 
-Run with Docker
-bash
-Copy code
+Visit: [http://localhost:5173](http://localhost:5173)
+
+---
+
+### Run with Docker
+
+```bash
 docker compose up --build
-Frontend: http://localhost:3000
+```
 
-Backend: http://localhost:8000
+- Frontend: [http://localhost:3000](http://localhost:3000)
+- Backend: [http://localhost:8000](http://localhost:8000)
 
-Bonus: Design & Extensions
-CI/CD & Deployment
-GitHub Actions pipeline for build, test, and deployment
+---
 
-Environment promotion strategy (dev → test → prod) with separate configs
+## Bonus: Design & Extensions
 
-Deployable to Azure App Service + Azure Container Registry
+### CI/CD & Deployment
+- GitHub Actions pipeline for build, test, and deployment
+- Environment promotion strategy (dev → test → prod) with separate configs
+- Deployable to Azure App Service + Azure Container Registry
 
-Databricks & Unity Catalog Integration (Design)
-Backend could read training/inference data directly from Unity Catalog
+### Databricks & Unity Catalog Integration (Design)
+- Backend could read training/inference data directly from Unity Catalog
+- Trigger long-running jobs via Databricks Jobs API
+- Store outputs in Delta tables; dashboard reads processed results
 
-Trigger long-running jobs via Databricks Jobs API
+---
 
-Store outputs in Delta tables; dashboard reads processed results
+## Database Schema
 
-Database Schema
-models → available models
+- **models** → available models
+- **runs** → run metadata
+- **run_results** → tabular outputs
+- Extendable to support users / projects
 
-runs → run metadata
+---
 
-run_results → tabular outputs
+## AuthN/AuthZ
 
-Extendable to support users / projects
+- Plan to integrate MSAL (Azure AD) for login/logout
+- Secure API access per user/project scope
 
-AuthN/AuthZ
-Plan to integrate MSAL (Azure AD) for login/logout
+---
 
-Secure API access per user/project scope
+## API Docs
 
-API Docs
-Once backend is running, interactive API docs available at:
-http://localhost:8000/docs
+Once backend is running, interactive API docs available at:  
+[http://localhost:8000/docs](http://localhost:8000/docs)
 
-Deliverables
-GitHub repository (this repo)
+---
 
-Ready for live demo and technical presentation
+## Deliverables
 
-yaml
-Copy code
+- GitHub repository (this repo)
+- Ready for live demo and technical presentation
