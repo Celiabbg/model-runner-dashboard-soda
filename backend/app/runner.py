@@ -12,7 +12,6 @@ def _simulate_rows(inputs):
     year   = inputs.get("year")              # e.g. 2022
     pset   = (inputs.get("parameter_set") or "").lower()  # baseline/optimistic/pessimistic
 
-    # 用 parameter_set 粗略影响 value 的分布
     bias = {"baseline": 1.0, "optimistic": 1.2, "pessimistic": 0.8}.get(pset, 1.0)
 
     for _ in range(total):
