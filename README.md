@@ -76,7 +76,7 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+uvicorn main:app --reload --port 5173
 ```
 
 #### Frontend
@@ -98,7 +98,7 @@ docker compose up --build
 ```
 
 - Frontend: [http://localhost:3000](http://localhost:3000)
-- Backend: [http://localhost:8000](http://localhost:8000)
+- Backend: [http://localhost:5173](http://localhost:5173)
 
 ---
 
@@ -135,7 +135,7 @@ docker compose up --build
 ## API Docs
 
 Once backend is running, interactive API docs available at:  
-[http://localhost:8000/docs](http://localhost:8000/docs)
+[http://localhost:5173/docs](http://localhost:5173/docs)
 
 ---
 
